@@ -1,12 +1,22 @@
 import cv2
 import time
-import tkinter as tk
-from tkinter import simpledialog
 from config import WEBCAM_INDEX
 from face_engine import FaceRecognitionEngine
 from attendance import AttendanceLogger
+from PyQt5.QtWidgets import QApplication, QInputDialog
 
 def ask_name_popup():
+    """
+    Boîte de dialogue native ultrastable sur macOS avec PyQt5.
+    """
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    
+    text, ok = QInputDialog.getText(None, "Ajout d'une personne", "Entrez le prénom / nom :")
+    if ok and text:
+        return text.strip()
+    return None
     """
     Affiche une fenêtre graphique pop-up pour saisir le nom.
     """
