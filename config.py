@@ -6,7 +6,7 @@ ENCODINGS_FILE = "encodings.pkl"
 ATTENDANCE_FILE = "registre_presence.csv"
 
 # Paramètres du modèle et de l'IA
-RECOGNITION_THRESHOLD = 0.6   # Seuil de tolérance (distance euclidienne)
+RECOGNITION_THRESHOLD = 0.5   # Seuil de tolérance (distance euclidienne)
 FRAME_RESIZE_FACTOR = 0.25    # Réduction à 25% pour accélérer les calculs
 
 # Paramètres de temporisation (en secondes)
