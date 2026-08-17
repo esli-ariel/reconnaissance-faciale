@@ -105,3 +105,20 @@ class FaceRecognitionEngine:
         ]
 
         return scaled_locations, face_names, confidences
+
+    def add_new_person_and_reload(self, person_name, frames):
+        """
+        Sauvegarde les images d'une nouvelle personne, recalcule 
+        l'ensemble du dataset et met à jour le cache encodings.pkl.
+        """
+        person_dir = os.path.join(self.dataset_dir, person_name.lower())
+        os.makedirs(person_dir, exist_ok=True)
+
+        # Enregistrement des images capturées
+        for idx, frame in enumerate(frames):
+            img_path = os.path.join(person_dir, f"photo_{idx + 1}.jpg")
+            cv2.imwrite(img_path, frame)
+
+        print(f"[INFO] Photos enregistrées dans {person_dir}. Régénération du cache...")
+        # Forcer le rechargement et la mise à jour de encodings.pkl
+        self.load_dataset(force_reencode=True)

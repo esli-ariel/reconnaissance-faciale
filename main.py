@@ -14,7 +14,8 @@ def main():
         return
 
     prev_time = time.time()
-    print("[INFO] Lancement du flux vidéo OpenCV avec temporisation...")
+    print("[INFO] Lancement du flux vidéo.")
+    print("[ASTUCE] Appuyez sur 'a' pour AJOUTER une personne | Appuyez sur 'q' pour QUITTER.")
 
     while True:
         ret, frame = cap.read()
@@ -24,16 +25,14 @@ def main():
         # Traitement IA
         locations, names, confidences = engine.process_frame(frame)
 
-        # Réinitialise le compte à rebours de 10s pour ceux qui ne sont plus dans l'image
+        # Nettoyage des personnes absentes du cadre pour le chrono de 10s
         logger.clean_absent_persons(names)
 
         total_faces = len(locations)
 
         for (top, right, bottom, left), name, conf in zip(locations, names, confidences):
-            # Traitement de la temporisation et obtention du statut
             status_text = logger.process_person(name, conf)
 
-            # Définition du libellé d'affichage
             if name != "Inconnu":
                 label = f"{status_text} ({conf:.1f}%)"
                 color = (0, 255, 0)
@@ -41,29 +40,58 @@ def main():
                 label = "Inconnu"
                 color = (0, 0, 255)
 
-            # Dessin du cadre principal
             cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
-
-            # Bandeau d'en-tête en haut du cadre
+            
             text_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_DUPLEX, 0.5, 1)
             banner_width = max(right - left, text_size[0] + 12)
             cv2.rectangle(frame, (left, top - 35), (left + banner_width, top), color, cv2.FILLED)
-
-            # Texte au-dessus du cadre
             cv2.putText(frame, label, (left + 6, top - 10), cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
 
-        # Calcul des FPS
+        # Affichage des métriques et des instructions
         current_time = time.time()
         fps = 1 / (current_time - prev_time) if (current_time - prev_time) > 0 else 0
         prev_time = current_time
 
-        # Affichage des métriques générales
-        cv2.putText(frame, f"Personnes detectees: {total_faces}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-        cv2.putText(frame, f"FPS: {int(fps)}", (20, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+        cv2.putText(frame, f"Personnes: {total_faces} | FPS: {int(fps)}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        cv2.putText(frame, "[A] Ajouter personne | [Q] Quitter", (20, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 
         cv2.imshow("Système de Reconnaissance Faciale & Pointage", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = cv2.waitKey(1) & 0xFF
+
+        # --- TOUCHE 'A' : AJOUT D'UNE NOUVELLE PERSONNE EN DIRECT ---
+        if key == ord('a'):
+            # Pause de l'affichage vidéo pour saisir le nom dans le terminal
+            new_name = input("\n[AJOUT] Entrez le prénom / nom de la personne : ").strip()
+            if new_name:
+                captured_frames = []
+                print("[INFO] Capture automatique de 3 photos dans 2 secondes. Placez-vous devant le flux...")
+                
+                # Compte à rebours visuel de 3 secondes sur le flux
+                for countdown in range(3, 0, -1):
+                    temp_ret, temp_frame = cap.read()
+                    if temp_ret:
+                        cv2.putText(temp_frame, f"Attention ! Capture dans {countdown}...", (50, 200), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 165, 255), 3)
+                        cv2.imshow("Système de Reconnaissance Faciale & Pointage", temp_frame)
+                        cv2.waitKey(1000)
+
+                # Prise automatique de 3 clichés rapides
+                for photo_num in range(1, 4):
+                    temp_ret, temp_frame = cap.read()
+                    if temp_ret:
+                        captured_frames.append(temp_frame.copy())
+                        cv2.putText(temp_frame, f"PHOTO {photo_num}/3 CAPTUREE !", (50, 200), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 3)
+                        cv2.imshow("Système de Reconnaissance Faciale & Pointage", temp_frame)
+                        cv2.waitKey(500)
+
+                # Sauvegarde des images et rechargement de l'IA en arrière-plan
+                engine.add_new_person_and_reload(new_name, captured_frames)
+                print(f"[SUCCÈS] {new_name} a été ajouté(e) au dataset et l'IA est à jour !\n")
+
+        # --- TOUCHE 'Q' : QUITTER ---
+        elif key == ord('q'):
             break
 
     cap.release()
