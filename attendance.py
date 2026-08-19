@@ -22,7 +22,7 @@ class AttendanceLogger:
         """
         Gère la double temporisation :
         1. 30 min entre deux enregistrements.
-        2. 10s de présence continue dans le cadre.
+        2. 5s de présence continue dans le cadre.
         Retourne l'état / message à afficher.
         """
         if person_name == "Inconnu":
@@ -37,7 +37,7 @@ class AttendanceLogger:
                 rem_min = int((COOLDOWN_TIME - elapsed_since_reg) // 60)
                 return f"{person_name} (Enregistre - Re-check dans {rem_min}m)"
 
-        # 2. Gestion de la temporisation de 10 secondes dans le cadre
+        # 2. Gestion de la temporisation de 5 secondes dans le cadre
         if person_name not in self.detection_start_time:
             self.detection_start_time[person_name] = now
 
@@ -55,7 +55,7 @@ class AttendanceLogger:
 
     def clean_absent_persons(self, currently_visible_names):
         """
-        Réinitialise le compteur de 10s pour les personnes qui quittent le cadre.
+        Réinitialise le compteur de 5s pour les personnes qui quittent le cadre.
         """
         tracked_names = list(self.detection_start_time.keys())
         for name in tracked_names:
