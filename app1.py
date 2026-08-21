@@ -92,7 +92,7 @@ def log_attendance(name, confidence):
 st.title("⚡ Système de Reconnaissance Faciale & Pointage Intelligent (512D)")
 st.markdown("Architecture : InsightFace (ArcFace 512D) | Similarité Cosinus & Visualisation des Embeddings.")
 
-tabs = st.tabs(["🎥 Caméra en Direct", "➕ Enregistrement", "📊 Registre & Vérification"])
+tabs = st.tabs(["🎥 Caméra en Direct", "➕ Enregistrement", "📊 Registre & Vérification","🔧 Administration"])
 
 with tabs[0]:
     st.subheader("Flux Vidéo & Espace Vectoriel")
@@ -274,3 +274,31 @@ with tabs[2]:
         st.download_button("Télécharger le CSV", df_att.to_csv(index=False).encode('utf-8'), "registre.csv", "text/csv")
     else:
         st.info("Le registre est vide.")
+
+with tabs[3]:
+    st.subheader("🔧 Inspection des modèles")
+    
+    if st.button("Charger/Rafraîchir les données du modèle"):
+        if os.path.exists(ENCODINGS_FILE):
+            with open(ENCODINGS_FILE, "rb") as f:
+                data = pickle.load(f)
+            
+            # Affichage des statistiques
+            st.success(f"Fichier chargé : {len(data['names'])} visages détectés.")
+            
+            # Création d'un DataFrame pour une vue propre
+            df_debug = pd.DataFrame({
+                "Nom": data["names"],
+                "Dimensions": [str(e.shape) for e in data["encodings"]],
+                "Aperçu (10 premières valeurs)": [str(e[:10].tolist()) for e in data["encodings"]]
+            })
+            
+            st.dataframe(df_debug, use_container_width=True)
+            
+            # Option pour supprimer le fichier si corrompu
+            if st.button("Supprimer le fichier d'encodage (Réinitialiser)"):
+                os.remove(ENCODINGS_FILE)
+                st.warning("Le fichier a été supprimé. Veuillez redémarrer l'app ou re-scanner des visages.")
+                st.rerun()
+        else:
+            st.error("Le fichier 'encodings_insightface.pkl' n'existe pas.")
